@@ -1,0 +1,14 @@
+[
+{
+  "directory": "/home/idriss/projects/linear_algebra_lib",
+  "command": "/usr/bin/cc  -I/home/idriss/projects/linear_algebra_lib/include -std=gnu99 -Wall -Werror -o CMakeFiles/test_matrix.dir/src/matrix.c.o -c /home/idriss/projects/linear_algebra_lib/src/matrix.c",
+  "file": "/home/idriss/projects/linear_algebra_lib/src/matrix.c",
+  "output": "CMakeFiles/test_matrix.dir/src/matrix.c.o"
+},
+{
+  "directory": "/home/idriss/projects/linear_algebra_lib",
+  "command": "/usr/bin/cc  -I/home/idriss/projects/linear_algebra_lib/include -std=gnu99 -Wall -Werror -o CMakeFiles/test_matrix.dir/tests/test_matrix.c.o -c /home/idriss/projects/linear_algebra_lib/tests/test_matrix.c",
+  "file": "/home/idriss/projects/linear_algebra_lib/tests/test_matrix.c",
+  "output": "CMakeFiles/test_matrix.dir/tests/test_matrix.c.o"
+}
+]
