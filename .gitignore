@@ -1,0 +1,35 @@
+# Compiled object files
+*.o
+*.obj
+
+# Compiled executable
+build/
+*.out
+*.exe
+
+# CMake build files
+CMakeCache.txt
+CMakeFiles/
+Makefile
+cmake_install.cmake
+.cache/
+
+# IDE-specific files
+*.swp
+*.swo
+*.sublime-project
+*.sublime-workspace
+*.vscode/
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.bak
+
+# MacOS specific files
+.DS_Store
+
+# Windows specific files
+Thumbs.db
