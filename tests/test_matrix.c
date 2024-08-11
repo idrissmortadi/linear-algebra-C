@@ -218,6 +218,27 @@ void test_matrix_set_array() {
   matrix_free(mat);
 }
 
+void test_matrix_determinant() {
+  printf("\n=== TESTING test_matrix_determinant ===\n");
+  Matrix *mat = matrix_create(3, 3);
+  // Set values for mat
+  float array1[9] = {1., 2., 3., 0., 4, 5., 1., 0., 6.};
+  matrix_set_array(mat, array1, 9);
+  matrix_print(mat);
+
+  float det1 = matrix_determinant(mat);
+  printf("Determinant = %f, expected 22\n", det1);
+
+  float array2[9] = {2., 5., 3., 1., -2., 4., 3., 6., 1.};
+  matrix_set_array(mat, array2, 9);
+  matrix_print(mat);
+
+  float det2 = matrix_determinant(mat);
+  printf("Determinant = %f, expected 39\n", det2);
+
+  matrix_free(mat);
+}
+
 int main() {
   test_matrix_create_free();
   test_matrix_set_get();
@@ -228,6 +249,6 @@ int main() {
   test_matrix_mult();
   test_matrix_trans();
   test_matrix_set_array();
-
+  test_matrix_determinant();
   return 0;
 }

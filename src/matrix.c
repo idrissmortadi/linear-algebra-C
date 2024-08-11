@@ -1,4 +1,5 @@
 #include "matrix.h"
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -159,12 +160,60 @@ Matrix *matrix_trans(Matrix *mat) {
   return res;
 }
 
-float *matrix_determinant(Matrix *mat) {
+float matrix_determinant(Matrix *mat) {
   if (mat->n_rows != mat->n_cols) {
     fprintf(stderr, "Error matrix_determinant: n_rows(%zu) != n_cols(%zu)\n",
             mat->n_rows, mat->n_cols);
-    return NULL;
+    return NAN;
   }
 
-  return 0;
+  Matrix *lower = matrix_create(mat->n_rows, mat->n_cols);
+  Matrix *upper = matrix_create(mat->n_rows, mat->n_cols);
+
+  float *array = (float *)calloc(mat->n_rows * mat->n_cols, sizeof(float));
+  matrix_set_array(lower, array, mat->n_rows * mat->n_cols);
+  matrix_set_array(upper, array, mat->n_rows * mat->n_cols);
+
+  // Decomposing matrix into Upper and Lower
+  // triangular matrix
+  for (int i = 0; i < mat->n_rows; i++) {
+    // Upper Triangular
+    for (int k = i; k < mat->n_rows; k++) {
+      // Summation of L(i, j) * U(j, k)
+      float sum = 0;
+      for (int j = 0; j < i; j++)
+        sum += (matrix_get(lower, i, j) * matrix_get(upper, j, k));
+
+      // Evaluating U(i, k)
+      matrix_set(upper, i, k, matrix_get(mat, i, k) - sum);
+    }
+
+    // Lower Triangular
+    for (int k = i; k < mat->n_rows; k++) {
+      if (i == k)
+        matrix_set(lower, i, i, 1); // Diagonal as 1
+      else {
+        // Summation of L(k, j) * U(j, i)
+        float sum = 0;
+        for (int j = 0; j < i; j++)
+          sum += (matrix_get(lower, k, j) * matrix_get(upper, j, i));
+
+        // Evaluating L(k, i)
+        matrix_set(lower, k, i,
+                   (matrix_get(mat, k, i) - sum) / matrix_get(upper, i, i));
+      }
+    }
+  }
+  // End of LU decomposition
+
+  float det = 1;
+
+  for (size_t i = 0; i < upper->n_rows; i++) {
+    det *= matrix_get(upper, i, i);
+  };
+
+  matrix_free(lower);
+  matrix_free(upper);
+  free(array);
+  return det;
 }

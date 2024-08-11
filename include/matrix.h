@@ -2,7 +2,6 @@
 #define MATRIX_H
 
 #include <stddef.h>
-#include <stdlib.h>
 
 typedef struct matrix {
   float *array;
@@ -32,6 +31,6 @@ Matrix *matrix_mult(Matrix *mat1, Matrix *mat2);
 
 Matrix *matrix_trans(Matrix *mat1);
 
-float *matrix_detrminant(Matrix *mat1);
+float matrix_determinant(Matrix *mat1);
 
 #endif // !LINALGLIB_H
