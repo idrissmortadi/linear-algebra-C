@@ -33,3 +33,5 @@ cmake_install.cmake
 
 # Windows specific files
 Thumbs.db
+
+test_matrix
