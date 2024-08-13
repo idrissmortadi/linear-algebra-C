@@ -160,6 +160,33 @@ Matrix *matrix_trans(Matrix *mat) {
   return res;
 }
 
+void lu_decomposition(Matrix *A, Matrix *L, Matrix *U) {
+  size_t n = A->n_rows;
+
+  for (size_t i = 0; i < n; i++) {
+    for (size_t j = i; j < n; j++) {
+      // Upper Triangular
+      U->array[i * n + j] = A->array[i * n + j];
+      for (size_t k = 0; k < i; k++) {
+        U->array[i * n + j] -= L->array[i * n + k] * U->array[k * n + j];
+      }
+    }
+
+    for (size_t j = i; j < n; j++) {
+      if (i == j) {
+        L->array[i * n + i] = 1; // Diagonal as 1
+      } else {
+        // Lower Triangular
+        L->array[j * n + i] = A->array[j * n + i];
+        for (size_t k = 0; k < i; k++) {
+          L->array[j * n + i] -= L->array[j * n + k] * U->array[k * n + i];
+        }
+        L->array[j * n + i] /= U->array[i * n + i];
+      }
+    }
+  }
+}
+
 float matrix_determinant(Matrix *mat) {
   if (mat->n_rows != mat->n_cols) {
     fprintf(stderr, "Error matrix_determinant: n_rows(%zu) != n_cols(%zu)\n",
@@ -169,42 +196,7 @@ float matrix_determinant(Matrix *mat) {
 
   Matrix *lower = matrix_create(mat->n_rows, mat->n_cols);
   Matrix *upper = matrix_create(mat->n_rows, mat->n_cols);
-
-  float *array = (float *)calloc(mat->n_rows * mat->n_cols, sizeof(float));
-  matrix_set_array(lower, array, mat->n_rows * mat->n_cols);
-  matrix_set_array(upper, array, mat->n_rows * mat->n_cols);
-
-  // Decomposing matrix into Upper and Lower
-  // triangular matrix
-  for (int i = 0; i < mat->n_rows; i++) {
-    // Upper Triangular
-    for (int k = i; k < mat->n_rows; k++) {
-      // Summation of L(i, j) * U(j, k)
-      float sum = 0;
-      for (int j = 0; j < i; j++)
-        sum += (matrix_get(lower, i, j) * matrix_get(upper, j, k));
-
-      // Evaluating U(i, k)
-      matrix_set(upper, i, k, matrix_get(mat, i, k) - sum);
-    }
-
-    // Lower Triangular
-    for (int k = i; k < mat->n_rows; k++) {
-      if (i == k)
-        matrix_set(lower, i, i, 1); // Diagonal as 1
-      else {
-        // Summation of L(k, j) * U(j, i)
-        float sum = 0;
-        for (int j = 0; j < i; j++)
-          sum += (matrix_get(lower, k, j) * matrix_get(upper, j, i));
-
-        // Evaluating L(k, i)
-        matrix_set(lower, k, i,
-                   (matrix_get(mat, k, i) - sum) / matrix_get(upper, i, i));
-      }
-    }
-  }
-  // End of LU decomposition
+  lu_decomposition(mat, lower, upper);
 
   float det = 1;
 
@@ -214,6 +206,190 @@ float matrix_determinant(Matrix *mat) {
 
   matrix_free(lower);
   matrix_free(upper);
-  free(array);
   return det;
+}
+
+Matrix *matrix_identity(size_t n) {
+  Matrix *I = matrix_create(n, n);
+
+  for (size_t i = 0; i < n; i++) {
+    for (size_t j = 0; j < n; j++) {
+      if (i == j) {
+        matrix_set(I, i, j, 1);
+      } else {
+        matrix_set(I, i, j, 0);
+      }
+    }
+  }
+
+  return I;
+}
+
+void matrix_swap_rows(Matrix *mat, size_t row1, size_t row2) {
+  if (row1 > mat->n_rows) {
+    fprintf(stderr, "Error matrix_swap_rows: row1 (%zu) > matrix n_rows (%zu)",
+            row1, mat->n_rows);
+  } else if (row2 > mat->n_rows) {
+    fprintf(stderr, "Error matrix_swap_rows: row2 (%zu) > matrix n_rows (%zu)",
+            row2, mat->n_rows);
+  };
+
+  for (size_t j = 0; j < mat->n_cols; j++) {
+    float temp_val = matrix_get(mat, row1, j);
+
+    matrix_set(mat, row1, j, matrix_get(mat, row2, j));
+    matrix_set(mat, row2, j, temp_val);
+  }
+}
+
+Matrix *matrix_inverse(Matrix *mat) {
+  if (mat->n_rows != mat->n_cols) {
+    fprintf(stderr, "Error matrix_inverse: n_rows(%zu) != n_cols(%zu)\n",
+            mat->n_rows, mat->n_cols);
+    return NULL;
+  }
+
+  if (matrix_determinant(mat) == 0) {
+    fprintf(stderr,
+            "Error matrix_inverse: determinant is zero, no inverse exists\n");
+    return NULL;
+  }
+
+  size_t n = mat->n_rows;
+
+  // Copy mat into A
+  Matrix *A = matrix_create(n, n);
+  matrix_set_array(A, mat->array, n * n);
+
+  // Create identity matrix I
+  Matrix *I = matrix_identity(n);
+
+  for (size_t j = 0; j < n; j++) {
+    // Find pivot
+    float pivot = 0.0;
+    size_t pivot_index = j;
+    for (size_t i = j; i < n; i++) {
+      if (fabs(matrix_get(A, i, j)) > fabs(pivot)) {
+        pivot = matrix_get(A, i, j);
+        pivot_index = i;
+      }
+    }
+
+    // Swap rows in A and I if pivot is not on the diagonal
+    if (pivot_index != j) {
+      matrix_swap_rows(A, j, pivot_index);
+      matrix_swap_rows(I, j, pivot_index);
+    }
+
+    // Scale the pivot row
+    float pivot_value = matrix_get(A, j, j);
+    for (size_t k = 0; k < n; k++) {
+      matrix_set(A, j, k, matrix_get(A, j, k) / pivot_value);
+      matrix_set(I, j, k, matrix_get(I, j, k) / pivot_value);
+    }
+
+    // Eliminate the column entries below the pivot
+    for (size_t i = j + 1; i < n; i++) {
+      float factor = matrix_get(A, i, j);
+      for (size_t k = 0; k < n; k++) {
+        matrix_set(A, i, k, matrix_get(A, i, k) - factor * matrix_get(A, j, k));
+        matrix_set(I, i, k, matrix_get(I, i, k) - factor * matrix_get(I, j, k));
+      }
+    }
+  }
+
+  // Back substitution to eliminate upper triangular elements
+  for (size_t j = n; j-- > 0;) {
+    for (size_t i = 0; i < j; i++) {
+      float factor = matrix_get(A, i, j);
+      for (size_t k = 0; k < n; k++) {
+        matrix_set(A, i, k, matrix_get(A, i, k) - factor * matrix_get(A, j, k));
+        matrix_set(I, i, k, matrix_get(I, i, k) - factor * matrix_get(I, j, k));
+      }
+    }
+  }
+
+  matrix_free(A);
+  return I;
+}
+
+// Function to solve Ly = b using forward substitution
+void forward_substitution(Matrix *L, Matrix *b, Matrix *y) {
+  size_t n = L->n_rows;
+
+  for (size_t i = 0; i < n; i++) {
+    y->array[i] = b->array[i];
+    for (size_t j = 0; j < i; j++) {
+      y->array[i] -= L->array[i * n + j] * y->array[j];
+    }
+    y->array[i] /= L->array[i * n + i];
+  }
+}
+
+// Function to solve Ux = y using backward substitution
+void backward_substitution(Matrix *U, Matrix *y, Matrix *x) {
+  size_t n = U->n_rows;
+
+  for (int i = n - 1; i >= 0; i--) {
+    x->array[i] = y->array[i];
+    for (int j = i + 1; j < n; j++) {
+      x->array[i] -= U->array[i * n + j] * x->array[j];
+    }
+    x->array[i] /= U->array[i * n + i];
+  }
+}
+
+// Function to solve the system Ax = b using LU decomposition
+Matrix *solve_using_LU(Matrix *A, Matrix *b) {
+  size_t n = A->n_rows;
+
+  Matrix *L = matrix_create(n, n);
+  Matrix *U = matrix_create(n, n);
+  Matrix *y = matrix_create(n, 1);
+  Matrix *x = matrix_create(n, 1);
+
+  lu_decomposition(A, L, U);
+  forward_substitution(L, b, y);
+  backward_substitution(U, y, x);
+
+  matrix_free(L);
+  matrix_free(U);
+  matrix_free(y);
+
+  return x;
+}
+
+Matrix *solve_lin_system(Matrix *A, Matrix *b) {
+  size_t n = A->n_rows;
+  size_t m = A->n_cols;
+
+  if (A->n_rows != b->n_rows) {
+    fprintf(
+        stderr,
+        "solve_lin_system: Error solve_lin_system: size mismatch of A and b");
+    return NULL;
+  }
+  if (b->n_cols != 1) {
+    fprintf(stderr, "solve_lin_system: b n_cols > 1, not a vector");
+    return NULL;
+  }
+
+  if (n == m) {
+    Matrix *x = solve_using_LU(A, b);
+    return x;
+  } else if (n > m) {
+    printf("solve_lin_system: Overdetermined solution");
+    Matrix *x =
+        matrix_mult(matrix_mult(matrix_inverse(matrix_mult(matrix_trans(A), A)),
+                                matrix_trans(A)),
+                    b);
+    return x;
+  } else {
+    // Handle underdetermined system or return an error
+    fprintf(stderr,
+            "solve_lin_system: Underdetermined system is not supported\n");
+    return NULL;
+  }
+
+  return NULL;
 }

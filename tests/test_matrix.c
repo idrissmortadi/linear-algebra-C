@@ -1,5 +1,9 @@
 #include "matrix.h"
+#include <math.h>
 #include <stdio.h>
+
+// Define a small tolerance for floating-point comparisons
+#define TOLERANCE 1e-6
 
 void test_matrix_create_free() {
   printf("\n=== TESTING test_matrix_create_free ===\n");
@@ -239,6 +243,127 @@ void test_matrix_determinant() {
   matrix_free(mat);
 }
 
+// Function to compare two floats with a tolerance for floating-point precision
+int compare_floats(float a, float b, float tolerance) {
+  return fabsf(a - b) < tolerance;
+}
+
+void test_matrix_inverse() {
+
+  printf("\n=== TESTING test_matrix_determinant ===\n");
+  // Define a 3x3 test matrix
+  float test_array[] = {4, 7, 2, 3, 6, 1, 2, 5, 2};
+
+  Matrix *test_matrix = matrix_create(3, 3);
+  matrix_set_array(test_matrix, test_array, 9);
+
+  // Expected inverse (calculated manually or using a tool like NumPy)
+  float expected_inverse[] = {1.1666666666666665,
+                              -0.6666666666666665,
+                              -0.8333333333333333,
+                              -0.6666666666666666,
+                              0.6666666666666666,
+                              0.3333333333333333,
+                              0.5,
+                              -1.0,
+                              0.5};
+
+  // Compute the inverse using your function
+  Matrix *computed_inverse = matrix_inverse(test_matrix);
+
+  // Compare each element of the computed inverse to the expected values
+  int success = 1;
+  float tolerance = 1e-5;
+  for (size_t i = 0; i < 3; i++) {
+    for (size_t j = 0; j < 3; j++) {
+      float expected_value = expected_inverse[i * 3 + j];
+      float computed_value = matrix_get(computed_inverse, i, j);
+      if (!compare_floats(expected_value, computed_value, tolerance)) {
+        printf("Test failed at position (%zu, %zu): expected %f, got %f\n", i,
+               j, expected_value, computed_value);
+        success = 0;
+      }
+    }
+  }
+
+  if (success) {
+    printf("Test passed: matrix inverse is correct.\n");
+  }
+
+  // Free memory
+  matrix_free(test_matrix);
+  matrix_free(computed_inverse);
+}
+
+// Function to check if two matrices are approximately equal
+int matrices_are_approx_equal(Matrix *A, Matrix *B) {
+  size_t n = A->n_rows;
+  size_t m = A->n_cols;
+
+  if (n != B->n_rows || m != B->n_cols) {
+    return 0; // Different dimensions
+  }
+
+  for (size_t i = 0; i < n; i++) {
+    for (size_t j = 0; j < m; j++) {
+      if (fabs(A->array[i * m + j] - B->array[i * m + j]) > TOLERANCE) {
+        return 0; // Not approximately equal
+      }
+    }
+  }
+  return 1; // Approximately equal
+}
+
+// Function to test solve_lin_system for square matrix case
+void test_solve_lin_system() {
+  printf("\n=== TESTING test_solve_lin_system ===\n");
+  // Define matrix A and vector b
+  size_t n = 3;
+  Matrix *A = matrix_create(n, n);
+  Matrix *b = matrix_create(n, 1);
+
+  // Example data
+  float A_data[] = {2, 1, -1, -3, -1, 2, -2, 1, 2};
+  float b_data[] = {8, -11, -3};
+
+  matrix_set_array(A, A_data, n * n);
+  matrix_set_array(b, b_data, n);
+
+  // Solve the system
+  Matrix *x = solve_lin_system(A, b);
+
+  // Check if the result is correct
+  if (x == NULL) {
+    fprintf(stderr, "solve_lin_system failed\n");
+    matrix_free(A);
+    matrix_free(b);
+    return;
+  }
+
+  // Compute Ax
+  Matrix *Ax = matrix_mult(A, x);
+
+  // Check if Ax is approximately equal to b
+  if (matrices_are_approx_equal(Ax, b)) {
+    printf("Test passed\n");
+    printf("Expected b:\n");
+    matrix_print(b);
+    printf("Computed Ax:\n");
+    matrix_print(Ax);
+  } else {
+    printf("Test failed\n");
+    printf("Expected b:\n");
+    matrix_print(b);
+    printf("Computed Ax:\n");
+    matrix_print(Ax);
+  }
+
+  // Free matrices
+  matrix_free(A);
+  matrix_free(b);
+  matrix_free(x);
+  matrix_free(Ax);
+}
 int main() {
   test_matrix_create_free();
   test_matrix_set_get();
@@ -250,5 +375,8 @@ int main() {
   test_matrix_trans();
   test_matrix_set_array();
   test_matrix_determinant();
+  test_matrix_inverse();
+  test_solve_lin_system();
+
   return 0;
 }

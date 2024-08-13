@@ -31,6 +31,12 @@ Matrix *matrix_mult(Matrix *mat1, Matrix *mat2);
 
 Matrix *matrix_trans(Matrix *mat1);
 
+Matrix *matrix_identity(size_t n);
+
 float matrix_determinant(Matrix *mat1);
+
+Matrix *matrix_inverse(Matrix *mat);
+
+Matrix *solve_lin_system(Matrix *A, Matrix *b);
 
 #endif // !LINALGLIB_H
