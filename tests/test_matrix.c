@@ -243,11 +243,6 @@ void test_matrix_determinant() {
   matrix_free(mat);
 }
 
-// Function to compare two floats with a tolerance for floating-point precision
-int compare_floats(float a, float b, float tolerance) {
-  return fabsf(a - b) < tolerance;
-}
-
 void test_matrix_inverse() {
 
   printf("\n=== TESTING test_matrix_determinant ===\n");
@@ -295,25 +290,6 @@ void test_matrix_inverse() {
   matrix_free(computed_inverse);
 }
 
-// Function to check if two matrices are approximately equal
-int matrices_are_approx_equal(Matrix *A, Matrix *B) {
-  size_t n = A->n_rows;
-  size_t m = A->n_cols;
-
-  if (n != B->n_rows || m != B->n_cols) {
-    return 0; // Different dimensions
-  }
-
-  for (size_t i = 0; i < n; i++) {
-    for (size_t j = 0; j < m; j++) {
-      if (fabs(A->array[i * m + j] - B->array[i * m + j]) > TOLERANCE) {
-        return 0; // Not approximately equal
-      }
-    }
-  }
-  return 1; // Approximately equal
-}
-
 // Function to test solve_lin_system for square matrix case
 void test_solve_lin_system() {
   printf("\n=== TESTING test_solve_lin_system ===\n");
@@ -344,7 +320,7 @@ void test_solve_lin_system() {
   Matrix *Ax = matrix_mult(A, x);
 
   // Check if Ax is approximately equal to b
-  if (matrices_are_approx_equal(Ax, b)) {
+  if (matrices_are_approx_equal(Ax, b, TOLERANCE)) {
     printf("Test passed\n");
     printf("Expected b:\n");
     matrix_print(b);

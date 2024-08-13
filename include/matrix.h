@@ -39,4 +39,9 @@ Matrix *matrix_inverse(Matrix *mat);
 
 Matrix *solve_lin_system(Matrix *A, Matrix *b);
 
+// Utilities
+int matrices_are_approx_equal(Matrix *A, Matrix *B, float tolerance);
+
+int compare_floats(float a, float b, float tolerance);
+
 #endif // !LINALGLIB_H

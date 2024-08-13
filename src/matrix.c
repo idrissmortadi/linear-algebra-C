@@ -4,6 +4,30 @@
 #include <stdlib.h>
 #include <string.h>
 
+// Function to compare two floats with a tolerance for floating-point precision
+int compare_floats(float a, float b, float tolerance) {
+  return fabsf(a - b) < tolerance;
+}
+
+// Function to check if two matrices are approximately equal
+int matrices_are_approx_equal(Matrix *A, Matrix *B, float tolerance) {
+  size_t n = A->n_rows;
+  size_t m = A->n_cols;
+
+  if (n != B->n_rows || m != B->n_cols) {
+    return 0; // Different dimensions
+  }
+
+  for (size_t i = 0; i < n; i++) {
+    for (size_t j = 0; j < m; j++) {
+      if (fabs(A->array[i * m + j] - B->array[i * m + j]) > tolerance) {
+        return 0; // Not approximately equal
+      }
+    }
+  }
+  return 1; // Approximately equal
+}
+
 Matrix *matrix_create(size_t n_rows, size_t n_cols) {
   Matrix *mat = malloc(sizeof(Matrix));
 
